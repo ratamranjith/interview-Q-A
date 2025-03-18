@@ -405,3 +405,223 @@ true
 
 ---
 
+## 1. Advanced Promise and Async/Await Questions
+
+### **1.1 What will be the output?**
+```javascript
+console.log('Start');
+setTimeout(() => console.log('Timeout'), 0);
+Promise.resolve().then(() => console.log('Promise'));
+console.log('End');
+```
+**Output:**
+```
+Start
+End
+Promise
+Timeout
+```
+**Explanation:**
+- `setTimeout` is placed in the **callback queue** and executed later.
+- `Promise.then()` goes into the **microtask queue**, which executes before the callback queue.
+
+---
+
+### **1.2 Implement a function to execute promises in sequence**
+```javascript
+async function runInSequence(tasks) {
+    for (const task of tasks) {
+        console.log(await task());
+    }
+}
+
+const task1 = () => Promise.resolve('Task 1 done');
+const task2 = () => new Promise(res => setTimeout(() => res('Task 2 done'), 1000));
+const task3 = () => Promise.resolve('Task 3 done');
+
+runInSequence([task1, task2, task3]);
+```
+**Explanation:**
+- This ensures that each promise is executed only after the previous one completes.
+
+---
+
+### **1.3 Implement a Promise timeout mechanism**
+```javascript
+function promiseWithTimeout(promise, ms) {
+    let timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+    return Promise.race([promise, timeout]);
+}
+
+const slowTask = new Promise(res => setTimeout(() => res('Slow task done'), 3000));
+
+promiseWithTimeout(slowTask, 2000).then(console.log).catch(console.error);
+```
+**Explanation:**
+- `Promise.race()` ensures that whichever promise settles first (either the actual task or the timeout) determines the result.
+
+---
+
+## 2. Advanced Array Operations
+
+### **2.1 Implement a function to remove duplicates without using Set**
+```javascript
+function removeDuplicates(arr) {
+    return arr.filter((item, index) => arr.indexOf(item) === index);
+}
+console.log(removeDuplicates([1, 2, 2, 3, 4, 4, 5]));
+```
+
+---
+
+### **2.2 Implement a function to chunk an array**
+```javascript
+function chunkArray(arr, size) {
+    return arr.reduce((acc, _, i) => (i % size ? acc : [...acc, arr.slice(i, i + size)]), []);
+}
+console.log(chunkArray([1, 2, 3, 4, 5, 6, 7], 3));
+```
+
+---
+
+## 3. Advanced Event Loop and Concurrency
+
+### **3.1 What will be the output?**
+```javascript
+console.log('A');
+setTimeout(() => console.log('B'), 0);
+Promise.resolve().then(() => console.log('C'));
+console.log('D');
+```
+**Output:**
+```
+A
+D
+C
+B
+```
+**Explanation:**
+- Synchronous code runs first (`A` and `D`).
+- Promises (microtasks) run next (`C`).
+- Finally, `setTimeout` (macro task) runs (`B`).
+
+---
+
+## 4. Advanced `this` Keyword and Prototypes
+
+### **4.1 What will be the output?**
+```javascript
+function Person(name) {
+    this.name = name;
+    return { name: 'Override' };
+}
+const person = new Person('John');
+console.log(person.name);
+```
+**Output:**
+```
+Override
+```
+**Explanation:**
+- Since the constructor explicitly returns an object, it overrides `this`.
+
+---
+
+### **4.2 Create a custom method on `Function.prototype`**
+```javascript
+Function.prototype.defer = function(ms) {
+    let fn = this;
+    return function(...args) {
+        setTimeout(() => fn.apply(this, args), ms);
+    };
+};
+
+function greet() {
+    console.log('Hello!');
+}
+
+greet.defer(1000)();
+```
+**Explanation:**
+- `Function.prototype.defer` delays execution of any function by the specified time.
+
+---
+
+## 5. Advanced Functional Programming Concepts
+
+### **5.1 Implement a Memoization function**
+```javascript
+function memoize(fn) {
+    const cache = new Map();
+    return function (...args) {
+        const key = JSON.stringify(args);
+        if (cache.has(key)) return cache.get(key);
+        const result = fn(...args);
+        cache.set(key, result);
+        return result;
+    };
+}
+
+const fib = memoize(n => (n <= 1 ? n : fib(n - 1) + fib(n - 2)));
+console.log(fib(10));
+```
+
+---
+
+## 6. Advanced Web APIs & Multithreading
+
+### **6.1 Using Web Workers for parallel execution**
+```javascript
+// worker.js
+self.onmessage = function(e) {
+    let sum = 0;
+    for (let i = 0; i < 1e9; i++) sum += i;
+    self.postMessage(sum);
+};
+
+// main.js
+const worker = new Worker('worker.js');
+worker.onmessage = e => console.log('Worker result:', e.data);
+worker.postMessage('start');
+```
+**Explanation:**
+- Web Workers allow computation-heavy tasks to run on separate threads.
+
+---
+
+## 7. JavaScript Security & Performance Optimization
+
+### **7.1 Prevent memory leaks using WeakMap**
+```javascript
+const cache = new WeakMap();
+function fetchData(obj) {
+    if (!cache.has(obj)) cache.set(obj, { data: 'Expensive data' });
+    return cache.get(obj);
+}
+let obj = {};
+fetchData(obj);
+console.log(cache.has(obj)); // true
+obj = null; // Now WeakMap allows garbage collection
+```
+**Explanation:**
+- `WeakMap` holds weak references, preventing memory leaks.
+
+---
+
+### **7.2 Avoid synchronous reflows in the DOM**
+```javascript
+document.body.style.width = '100px';
+const width = document.body.offsetWidth; // Forces reflow
+```
+**Optimization:**
+```javascript
+document.body.style.width = '100px';
+requestAnimationFrame(() => {
+    const width = document.body.offsetWidth;
+});
+```
+**Explanation:**
+- `requestAnimationFrame` batches UI updates, preventing layout thrashing.
+
+---
+
